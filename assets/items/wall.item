@@ -1,0 +1,11 @@
+(
+    id: "wall",
+    name: "wall",
+    description: "wall",
+    edible: true,
+    recovery_amount: 0,
+    portable: false,
+    installable: true,
+    collision: true,
+    texture: "textures/square-wall.png",
+)
