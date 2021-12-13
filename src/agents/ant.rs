@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use super::Position;
 
 pub struct Ant;
 
@@ -8,7 +7,7 @@ pub struct AntPlugin;
 impl Plugin for AntPlugin {
     fn build(&self, app: &mut AppBuilder) {
         app.add_startup_system(setup.system());
-            // .add_system(position_transform.system());
+        // .add_system(position_transform.system());
     }
 }
 

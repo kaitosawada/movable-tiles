@@ -28,12 +28,12 @@ fn load(
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut textures: ResMut<Assets<Texture>>,
 ) {
-    if map_state.atlas_loaded || !sprite_handles.texture_loaded {
+    if map_state.atlas_loaded || !sprite_handles.textures_loaded {
         return;
     }
 
     let mut texture_atlas_builder = TextureAtlasBuilder::default();
-    for handle in sprite_handles.handles.iter() {
+    for handle in sprite_handles.textures_handles.iter() {
         let texture = textures.get(handle).unwrap();
         texture_atlas_builder.add_texture(handle.clone_weak().typed::<Texture>(), texture);
     }
@@ -59,7 +59,7 @@ fn load(
             is_transparent: true,
         },
         transform: Transform {
-            translation: Vec3::new(0.0, 0.0, 0.0),
+            translation: Vec3::new(16.0, 16.0, 0.0),
             scale: Vec3::new(1.0, 1.0, 1.0),
             rotation: Quat::from_rotation_x(0.0),
         },
@@ -104,7 +104,7 @@ fn build_world(
                 let x = x - chunk_width / 2;
                 let tile = Tile {
                     point: (x, y),
-                    sprite_index: if x < 10 || y < 10 {floor_index1} else {floor_index2},
+                    sprite_index: if i {floor_index1} else {floor_index2},
                     ..Default::default()
                 };
                 tiles.push(tile);

@@ -1,0 +1,11 @@
+(
+    id: "berry",
+    name: "berry",
+    description: "berry",
+    edible: true,
+    recovery_amount: 2,
+    portable: false,
+    installable: true,
+    collision: true,
+    texture: "textures/berry.png",
+)

@@ -4,7 +4,7 @@ use bevy::{asset::LoadState, prelude::*, reflect::TypeUuid};
 use bevy_asset_ron::RonAssetPlugin;
 use serde::Deserialize;
 
-use super::textures::SpriteHandles;
+use super::{textures::SpriteHandles, world::{AddItemToWorldEvent, Position}};
 
 #[derive(Deserialize, TypeUuid, Debug, Default)]
 #[uuid = "e0701840-8dc9-ff6b-80d1-b25acda6107f"]
@@ -40,10 +40,15 @@ pub struct ItemDataMap {
 }
 
 pub struct Item {
+    // Component
     item_id: String,
 }
 
+pub struct Owner(pub Entity);
+
 pub struct ItemsPlugin;
+
+pub const ITEM_LAYER: f32 = 10.0;
 
 impl Plugin for ItemsPlugin {
     fn build(&self, app: &mut AppBuilder) {
@@ -77,8 +82,36 @@ fn load_ron(mut handles: ResMut<ItemsHandles>, asset_server: Res<AssetServer>) {
     }
 }
 
+pub fn spawn_item(
+    commands: &mut Commands,
+    event_writer: &mut EventWriter<AddItemToWorldEvent>,
+    item_data: &ItemDataMap,
+    item_id: &str,
+    pos: Position,
+) {
+    if let Some(item_data) = item_data.data.get(item_id) {
+        let entity = commands
+            .spawn_bundle(SpriteBundle {
+                material: item_data.material_handle.clone(),
+                transform: Transform {
+                    translation: Vec3::new(0.0, 0.0, 0.0),
+                    scale: Vec3::new(1.0, 1.0, 0.0),
+                    rotation: Quat::from_rotation_x(0.0),
+                },
+                ..Default::default()
+            })
+            .insert(Item {
+                item_id: item_id.to_string(),
+            })
+            .insert(pos)
+            .id();
+        event_writer.send(AddItemToWorldEvent(entity, pos));
+    }
+}
+
 fn load_material(
     mut commands: Commands,
+    mut event_writer: EventWriter<AddItemToWorldEvent>,
     mut item_data: ResMut<ItemDataMap>,
     mut handles: ResMut<ItemsHandles>,
     sprite_handles: ResMut<SpriteHandles>,
@@ -86,7 +119,7 @@ fn load_material(
     assets: Res<Assets<ItemAssets>>,
     mut material_assets: ResMut<Assets<ColorMaterial>>,
 ) {
-    if handles.material_loaded || !sprite_handles.texture_loaded {
+    if handles.material_loaded || !sprite_handles.textures_loaded {
         return;
     }
 
@@ -104,22 +137,36 @@ fn load_material(
     item_data.data = map;
 
     handles.material_loaded = true;
+
     // TODO: delete
-    if let Some(item_data) = item_data.data.get("wall") {
-        commands
-            .spawn_bundle(SpriteBundle {
-                material: item_data.material_handle.clone(),
-                transform: Transform {
-                    translation: Vec3::new(0.0, 0.0, 5.0),
-                    scale: Vec3::new(1.0, 1.0, 0.0),
-                    rotation: Quat::from_rotation_x(0.0),
-                },
-                ..Default::default()
-            })
-            .insert(Item {
-                item_id: "wall".to_string(),
-            });
-    }
+    spawn_item(
+        &mut commands,
+        &mut event_writer,
+        &(*item_data),
+        "berry",
+        Position { x: 2, y: 0 },
+    );
+    spawn_item(
+        &mut commands,
+        &mut event_writer,
+        &(*item_data),
+        "berry",
+        Position { x: 3, y: 0 },
+    );
+    spawn_item(
+        &mut commands,
+        &mut event_writer,
+        &(*item_data),
+        "berry",
+        Position { x: 0, y: 0 },
+    );
+    spawn_item(
+        &mut commands,
+        &mut event_writer,
+        &(*item_data),
+        "wall",
+        Position { x: 1, y: 0 },
+    );
 }
 
 fn fixup_textures(
@@ -135,7 +182,8 @@ fn fixup_textures(
             AssetEvent::Created { .. } => {}
             AssetEvent::Modified { handle } => {
                 let item_assets = assets.get(handle).unwrap();
-                let texture: Handle<Texture> = asset_server.get_handle(item_assets.texture.as_str());
+                let texture: Handle<Texture> =
+                    asset_server.get_handle(item_assets.texture.as_str());
                 let material_handle = material_assets.add(texture.into());
                 let item = ItemData {
                     item_handle: handle.clone(),
